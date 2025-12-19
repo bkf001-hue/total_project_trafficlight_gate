@@ -6,3 +6,4 @@ sim_*.out
 *.vcd
 *.out
 sim_*.out
+tt/
