@@ -1,0 +1,4 @@
+# simulation artifacts
+*.vcd
+*.out
+sim_*.out
