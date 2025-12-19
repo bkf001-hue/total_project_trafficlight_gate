@@ -1,0 +1,5 @@
+{
+  "DESIGN_NAME": "tt_um_bkf001_hue_trafficlight_gate",
+  "CLOCK_PORT": "clk",
+  "CLOCK_NET": "clk"
+}
