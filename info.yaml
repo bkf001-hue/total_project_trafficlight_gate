@@ -10,14 +10,14 @@ project:
 
   top_module: "tt_um_bkf001_hue_trafficlight_gate"
   source_files:
-    - src/clock_divider.v
-    - src/timer.v
-    - src/traffic_fsm.v
-    - src/gate_fsm.v
-    - src/pwm_driver.v
-    - src/seven_segment.v
-    - src/top_module.v
-    - src/tt_um_bkf001_hue_trafficlight_gate.v
+    - clock_divider.v
+    - timer.v
+    - traffic_fsm.v
+    - gate_fsm.v
+    - pwm_driver.v
+    - seven_segment.v
+    - top_module.v
+    - tt_um_bkf001_hue_trafficlight_gate.v
 
 pinout:
   ui[0]: ""
