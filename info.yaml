@@ -1,0 +1,48 @@
+yaml_version: 6
+
+project:
+  title: "Traffic Light + Gate Controller"
+  author: "bkf001-hue"
+  description: "FSM + Timer + PWM + 7-Segment traffic light & gate controller"
+  language: "Verilog"
+  clock_hz: 10000000
+  tiles: "1x1"
+
+  top_module: "tt_um_bkf001_hue_trafficlight_gate"
+  source_files:
+    - src/clock_divider.v
+    - src/timer.v
+    - src/traffic_fsm.v
+    - src/gate_fsm.v
+    - src/pwm_driver.v
+    - src/seven_segment.v
+    - src/top_module.v
+    - src/tt_um_bkf001_hue_trafficlight_gate.v
+
+pinout:
+  ui[0]: ""
+  ui[1]: ""
+  ui[2]: ""
+  ui[3]: ""
+  ui[4]: ""
+  ui[5]: ""
+  ui[6]: ""
+  ui[7]: ""
+
+  uo[0]: "LED_R"
+  uo[1]: "LED_G"
+  uo[2]: "LED_Y"
+  uo[3]: "PWM_GATE"
+  uo[4]: ""
+  uo[5]: ""
+  uo[6]: ""
+  uo[7]: ""
+
+  uio[0]: "SEG_A"
+  uio[1]: "SEG_B"
+  uio[2]: "SEG_C"
+  uio[3]: "SEG_D"
+  uio[4]: "SEG_E"
+  uio[5]: "SEG_F"
+  uio[6]: "SEG_G"
+  uio[7]: ""
