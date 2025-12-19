@@ -7,3 +7,8 @@ sim_*.out
 *.out
 sim_*.out
 tt/
+# TT / LibreLane generated
+runs/
+src/user_config.json
+src/config_merged.json
+src/config.json
