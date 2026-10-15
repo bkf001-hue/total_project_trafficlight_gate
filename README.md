@@ -1,116 +1,64 @@
-# Traffic Light & Gate Controller | Verilog RTL Design
+# Traffic Light & Gate Controller
 
-> **Semiconductor Design Total Project** — FSM-based traffic-light controller with timer, PWM-controlled gate output, 7-segment display, RTL simulation and a GDS deliverable.
+**Verilog RTL Design · FSM · PWM · 7-Segment · Tiny Tapeout**
 
-**Tools:** Verilog · Icarus Verilog · GitHub Actions · Tiny Tapeout interface
+교통신호 상태에 따라 LED와 차단기 제어용 PWM 신호를 출력하는 디지털 회로 설계 프로젝트입니다. Verilog로 모듈을 나누어 작성하고, Testbench로 동작을 확인한 뒤 GDS 산출물을 정리했습니다.
 
-## 1. Project Overview
-
-This project implements a digital traffic-light controller that cycles through **RED → GREEN → YELLOW → RED**. A timer controls state transitions, LEDs indicate the current traffic state, a PWM output represents gate actuation, and a 7-segment output displays the remaining countdown.
-
-The repository includes RTL source code, SystemVerilog testbenches, project documentation and an archived GDS deliverable. The physical gate motor itself was **not** demonstrated in this repository: gate behavior is represented by PWM output.
-
-## 2. System Architecture
+## 동작 구조
 
 ```text
-                 clk / rst_n
-                      |
-                Clock Divider
-                      |
-                     tick
-                      v
-              Traffic FSM + Timer ------> LED R/G/Y
-                      |
-                traffic_state
-                      +---------------> PWM Driver ----> PWM_GATE
-                      |
-                  time_left
-                      +---------------> 7-Segment Decoder
+clk / rst_n
+    |
+Clock Divider → tick
+    |
+Traffic FSM + Timer ──→ RED / GREEN / YELLOW LEDs
+    |          |
+    |          └──→ 7-Segment (remaining time)
+    └──→ PWM Driver ──→ gate PWM output
 ```
 
-The repository also contains `src/gate_fsm.v`, which maps traffic states to CLOSE/OPEN/WAIT. **The current integrated top module does not instantiate this separate Gate FSM**: instead, `pwm_driver.v` directly selects its duty value from `traffic_state`.
+신호등은 **RED → GREEN → YELLOW → RED** 순서로 전환됩니다. 기본 상태 지속시간은 RED 5 tick, GREEN 5 tick, YELLOW 2 tick이며, `top_module.v`은 시뮬레이션을 위해 DIV=50을 사용합니다. 여기서 tick은 실제 1초와 같지 않습니다.
 
-### Main RTL modules
+| 상태 | LED | PWM duty |
+|---|---|---:|
+| RED | 빨강 | 10% |
+| GREEN | 초록 | 90% |
+| YELLOW | 노랑 | 50% |
 
-| File | Function |
+PWM은 차단기 제어를 가정한 논리 신호이며, 실제 모터 구동까지 검증한 것은 아닙니다. 별도 `gate_fsm.v` 파일도 있지만 현재 최상위 모듈에서는 사용하지 않습니다.
+
+## 주요 파일
+
+| 경로 | 역할 |
 |---|---|
-| `src/clock_divider.v` | Generates a slower tick from the input clock |
-| `src/timer.v` | Maintains the countdown and generates timer completion |
-| `src/traffic_fsm.v` | Controls RED/GREEN/YELLOW state transitions and LED outputs |
-| `src/pwm_driver.v` | Selects PWM duty according to traffic state |
-| `src/seven_segment.v` | Converts countdown value to 7-segment output |
-| `src/top_module.v` | Connects the active controller modules |
-| `src/tt_um_bkf001_hue_trafficlight_gate.v` | Maps the design to the Tiny Tapeout I/O interface |
-| `src/gate_fsm.v` | Separate gate-state logic, present but not instantiated by the current top |
+| [src/traffic_fsm.v](src/traffic_fsm.v) | 신호등 FSM 및 Timer 제어 |
+| [src/timer.v](src/timer.v) | 상태별 카운트다운 |
+| [src/clock_divider.v](src/clock_divider.v) | tick 생성 |
+| [src/pwm_driver.v](src/pwm_driver.v) | 상태별 PWM duty 출력 |
+| [src/seven_segment.v](src/seven_segment.v) | 잔여시간 표시 |
+| [src/top_module.v](src/top_module.v) | RTL 모듈 통합 |
+| [src/tt_um_bkf001_hue_trafficlight_gate.v](src/tt_um_bkf001_hue_trafficlight_gate.v) | Tiny Tapeout I/O 매핑 |
 
-## 3. Control Logic
+## 검증
 
-The default RTL state durations are configured as 5 ticks (RED), 5 ticks (GREEN), and 2 ticks (YELLOW). Here, **a tick is not automatically one real second**: the current `top_module.v` uses `clock_divider #(.DIV(50))` to speed up simulation.
+`make test`로 다음 3가지 테스트를 실행할 수 있습니다.
 
-| Traffic state | LED | Gate interpretation | PWM duty |
-|---|---|---|---:|
-| RED | Red | Closed | 10% |
-| GREEN | Green | Open | 90% |
-| YELLOW | Yellow | Wait | 50% |
-
-PWM values are logical simulation outputs and are **not evidence of calibrated physical servo positions**.
-
-## 4. RTL Verification
-
-The repository includes three testbenches:
-
-| Testbench | What it checks |
+| Testbench | 확인한 내용 |
 |---|---|
-| `test/tb_traffic_fsm.sv` | Observes the RED → GREEN → YELLOW → RED sequence |
-| `test/tb_gate_pwm.sv` | Checks that measured PWM high counts increase from RED to YELLOW to GREEN |
-| `test/tb_top_smoke.sv` | Checks that the integrated top reaches GREEN and YELLOW |
-
-Run locally with **Icarus Verilog** and **make** installed:
+| `tb_traffic_fsm.sv` | 신호등 상태 전환 순서 |
+| `tb_gate_pwm.sv` | RED·YELLOW·GREEN 간 PWM 출력 비율 순서 |
+| `tb_top_smoke.sv` | 통합 회로에서 GREEN·YELLOW 상태 도달 여부 |
 
 ```bash
 make test
 ```
 
-The Makefile runs all three tests. GitHub Actions also runs `make test` on pushes and pull requests. The recorded workflow executions on this repository show **three successful test runs** as of 2025-12-19.
+Icarus Verilog와 make가 필요합니다. GitHub Actions 테스트 실행 기록도 [Actions](../../actions)에서 확인할 수 있습니다.
 
-[View verification workflow](../../actions/workflows/makefile.yml)
+## 설계 산출물
 
-**Verification scope:** These tests establish the specified state-sequence, PWM ordering, and integrated smoke-test behavior; they do not constitute exhaustive functional, timing, or silicon validation.
+- [GDS 아카이브](deliverables/tt_um_bkf001_hue_trafficlight_gate_gds.tar.gz)
+- [Tiny Tapeout 설정](info.yaml)
+- [Project Plan](docs/PROJECT_PLAN.md)
 
-## 5. Tiny Tapeout Interface & GDS
-
-The design includes a Tiny Tapeout-compatible wrapper:
-
-- `uo_out[0:2]`: red, green and yellow LEDs
-- `uo_out[3]`: PWM gate output
-- `uio_out[0:6]`: 7-segment outputs
-
-The configured project metadata is available in [info.yaml](info.yaml).
-
-**Stored GDS deliverable:**
-
-[`deliverables/tt_um_bkf001_hue_trafficlight_gate_gds.tar.gz`](deliverables/tt_um_bkf001_hue_trafficlight_gate_gds.tar.gz)
-
-The GDS archive is present in the repository. Its existence does not independently establish a fabrication run, physical chip test, or acceptance by an external submission service.
-
-## 6. Repository Structure
-
-```text
-src/                 Verilog RTL modules and Tiny Tapeout wrapper
-test/                RTL verification testbenches
-docs/                Detailed design plan and technical notes
-deliverables/        Archived GDS file
-.github/workflows/    Automated make test workflow
-info.yaml            Tiny Tapeout project metadata
-Makefile             Local simulation and test commands
-```
-
-For detailed design decisions and state diagrams, see [Project Plan](docs/PROJECT_PLAN.md) and [Technical Notes](docs/info.md).
-
-## 7. Scope and Next Steps
-
-**Implemented and evidenced here:** modular RTL, state-controlled LED outputs, timer and PWM logic, 7-segment output, automated simulation tests, Tiny Tapeout wrapper and stored GDS artifact.
-
-**Not independently verified here:** physical gate actuation, silicon fabrication or measurement, exhaustive corner-case validation and external submission acceptance.
-
-Potential extensions include integrating the separate Gate FSM into the active top module, adding stronger assertions and edge-case tests, and testing physical gate hardware.
+GDS 파일은 설계 산출물로 저장한 것이며, 실제 칩 제작이나 실측까지 확인한 결과는 아닙니다.
